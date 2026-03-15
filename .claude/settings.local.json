@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm view:*)",
+      "Bash(npm run build)",
+      "Bash(node test-lib.mjs:*)",
+      "Bash(node quick-test.js:*)",
+      "Bash(node:*)"
+    ]
+  }
+}

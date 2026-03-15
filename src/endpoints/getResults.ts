@@ -60,7 +60,7 @@ export interface GetResultsArguments {
 
 export const getResults =
   (config: HLTVConfig) =>
-  async (options: GetResultsArguments): Promise<FullMatchResult[]> => {
+  async (options: GetResultsArguments = {}): Promise<FullMatchResult[]> => {
     const query = stringify({
       ...(options.startDate ? { startDate: options.startDate } : {}),
       ...(options.endDate ? { endDate: options.endDate } : {}),
@@ -108,7 +108,9 @@ export const getResults =
             }
 
             const stars = el.find('.stars i').length
-            const date = el.numFromAttr('data-zonedgrouping-entry-unix')!
+            const date = el.numFromAttr('data-zonedgrouping-entry-unix')
+            if (!date) return null // Skip results without date (featured results without timestamp)
+
             const format = el.find('.map-text').text()
 
             const team1 = {

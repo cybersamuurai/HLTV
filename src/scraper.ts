@@ -34,12 +34,12 @@ export interface HLTVPageElement {
   ): HLTVPageElement
 }
 
-const attachMethods = (root: cheerio.Cheerio): HLTVPageElement => {
+const attachMethods = (root: cheerio.Cheerio, $: cheerio.Root): HLTVPageElement => {
   const obj: HLTVPageElement = {
     length: root.length,
 
     find(selector: string): HLTVPageElement {
-      return attachMethods(root.find(selector))
+      return attachMethods(root.find(selector), $)
     },
 
     attr(attr: string): string {
@@ -59,11 +59,11 @@ const attachMethods = (root: cheerio.Cheerio): HLTVPageElement => {
     },
 
     first(): HLTVPageElement {
-      return attachMethods(root.first())
+      return attachMethods(root.first(), $)
     },
 
     last(): HLTVPageElement {
-      return attachMethods(root.last())
+      return attachMethods(root.last(), $)
     },
 
     data(name: string): any {
@@ -91,38 +91,42 @@ const attachMethods = (root: cheerio.Cheerio): HLTVPageElement => {
     },
 
     toArray(): HLTVPageElement[] {
-      return root.toArray().map(cheerio.default).map(attachMethods)
+      return root.toArray().map(el => attachMethods($(el) as any as cheerio.Cheerio, $))
     },
 
     prev(selector?: string): HLTVPageElement {
-      return attachMethods(root.prev(selector))
+      return attachMethods(root.prev(selector), $)
     },
 
     next(selector?: string): HLTVPageElement {
-      return attachMethods(root.next(selector))
+      return attachMethods(root.next(selector), $)
     },
 
     eq(index: number): HLTVPageElement {
-      return attachMethods(root.eq(index))
+      return attachMethods(root.eq(index), $)
     },
 
     children(selector?: string): HLTVPageElement {
-      return attachMethods(root.children(selector))
+      return attachMethods(root.children(selector), $)
     },
 
     parent(): HLTVPageElement {
-      return attachMethods(root.parent())
+      return attachMethods(root.parent(), $)
     },
 
     contents(): HLTVPageElement {
-      return attachMethods(root.contents())
+      return attachMethods(root.contents(), $)
     },
 
     filter(
       func: (index: number, element: HLTVPageElement) => boolean
     ): HLTVPageElement {
       return attachMethods(
-        root.filter((i, el) => func(i, attachMethods(cheerio.default(el))))
+        root.filter((i, el) => {
+          const wrapped = $(el) as any as cheerio.Cheerio
+          return func(i, attachMethods(wrapped, $))
+        }),
+        $
       )
     },
 
@@ -136,7 +140,7 @@ const attachMethods = (root: cheerio.Cheerio): HLTVPageElement => {
 
 export const HLTVScraper = (root: cheerio.Root): HLTVPage => {
   const selector = (selector: string): HLTVPageElement => {
-    return attachMethods(root(selector))
+    return attachMethods(root(selector), root)
   }
   Object.assign(selector, root)
 

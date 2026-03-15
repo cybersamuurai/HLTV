@@ -9,9 +9,26 @@ export interface HLTVConfig {
 
 export const defaultLoadPage =
   (httpAgent: HttpsAgent | HttpAgent | undefined) => (url: string) =>
-    gotScraping({ url, agent: { http: httpAgent, https: httpAgent } }).then(
-      (res) => res.body
-    )
+    gotScraping({
+      url,
+      agent: { http: httpAgent, https: httpAgent },
+      headerGeneratorOptions: {
+        browsers: [
+          { name: 'chrome', minVersion: 120 },
+          { name: 'firefox', minVersion: 115 }
+        ],
+        devices: ['desktop'],
+        locales: ['en-US', 'en'],
+        operatingSystems: ['windows', 'macos']
+      },
+      timeout: {
+        request: 30000
+      },
+      retry: {
+        limit: 2,
+        methods: ['GET']
+      }
+    }).then((res: any) => res.body)
 
 const defaultAgent = new HttpsAgent()
 

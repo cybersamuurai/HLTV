@@ -1,0 +1,150 @@
+════════════════════════════════════════════════════════════════════════════════
+  HLTV API - COMPREHENSIVE TEST OF ALL ENDPOINTS
+════════════════════════════════════════════════════════════════════════════════
+
+
+────────────────────────────────────────────────────────────────────────────────
+  MATCHES
+────────────────────────────────────────────────────────────────────────────────
+
+  Testing: getMatches
+  Get all upcoming and live matches
+  ✓ PASSED (496 items, 979ms)
+    Sample: {
+      "id": 2391612,
+      "stars": 1,
+
+  Testing: getMatch
+  Get specific match details
+  ✓ PASSED (N/A items, 1285ms)
+
+────────────────────────────────────────────────────────────────────────────────
+  RESULTS
+────────────────────────────────────────────────────────────────────────────────
+
+  Testing: getResults
+  Get recent match results
+  ✓ PASSED (116513 items, 607083ms)
+    Sample: {
+      "id": 2391268,
+      "stars": 0,
+
+  Testing: getMatchStats
+  Get match statistics
+  ✗ FAILED: Access denied | www.hltv.org used Cloudflare to restrict access
+
+────────────────────────────────────────────────────────────────────────────────
+  EVENTS
+────────────────────────────────────────────────────────────────────────────────
+
+  Testing: getEvents
+  Get upcoming events/tournaments
+  ✓ PASSED (133 items, 382ms)
+    Sample: {
+      "id": 9064,
+      "name": "CCT Season 3 South America Series 10",
+
+  Testing: getEvent
+  Get specific event details
+  ✓ PASSED (N/A items, 2081ms)
+
+  Testing: getPastEvents
+  Get past events
+  ✓ PASSED (60 items, 1394ms)
+    Sample: {
+      "id": 7641,
+      "name": "YaLLa Compass Spring 2024 Contenders",
+
+────────────────────────────────────────────────────────────────────────────────
+  TEAMS
+────────────────────────────────────────────────────────────────────────────────
+
+  Testing: getTeamRanking
+  Get current team rankings
+  ✓ PASSED (255 items, 520ms)
+    Sample: {
+      "points": 1000,
+      "place": 1,
+
+  Testing: getTeam
+  Get specific team details
+  ✓ PASSED (N/A items, 1486ms)
+
+  Testing: getTeamStats
+  Get team statistics
+  ✗ FAILED: Access denied | www.hltv.org used Cloudflare to restrict access
+
+────────────────────────────────────────────────────────────────────────────────
+  PLAYERS
+────────────────────────────────────────────────────────────────────────────────
+
+  Testing: getPlayerRanking
+  Get player statistics rankings
+  ✗ FAILED: Access denied | www.hltv.org used Cloudflare to restrict access
+
+  Testing: getPlayer
+  Get specific player details
+  ✓ PASSED (N/A items, 643ms)
+
+  Testing: getPlayerStats
+  Get player statistics
+  ✗ FAILED: Access denied | www.hltv.org used Cloudflare to restrict access
+
+────────────────────────────────────────────────────────────────────────────────
+  NEWS
+────────────────────────────────────────────────────────────────────────────────
+
+  Testing: getNews
+  Get recent news articles
+  ✓ PASSED (120 items, 430ms)
+    Sample: {
+      "link": "/news/44096/w0nderful-shines-as-navi-beat-aurora-to-lift-esl-pro-league-season-23-trophy",
+      "title": "w0nderful shines as NAVI beat Aurora to lift ESL Pro League Season 23 trophy ",
+
+  Testing: getRecentThreads
+  Get recent forum threads
+  ✓ PASSED (28 items, 364ms)
+    Sample: {
+      "title": "Turks. Use this thread for cry",
+      "link": "/forums/threads/3122074/turks-use-this-thread-for-cry",
+
+────────────────────────────────────────────────────────────────────────────────
+  MISC
+────────────────────────────────────────────────────────────────────────────────
+
+  Testing: getStreams
+  Get live streams
+  ✓ PASSED (92 items, 807ms)
+    Sample: {
+      "name": "ohnePixel",
+      "category": "Caster",
+
+════════════════════════════════════════════════════════════════════════════════
+  FINAL RESULTS
+════════════════════════════════════════════════════════════════════════════════
+  Total tests: 16
+  ✓ Passed: 12
+  ✗ Failed: 4
+  Success rate: 75.0%
+════════════════════════════════════════════════════════════════════════════════
+
+  Results by category:
+    MATCHES: 2/2 (100%)
+    RESULTS: 1/2 (50%)
+    EVENTS: 3/3 (100%)
+    TEAMS: 2/3 (67%)
+    PLAYERS: 1/3 (33%)
+    NEWS: 2/2 (100%)
+    MISC: 1/1 (100%)
+
+  Failed tests:
+    - getMatchStats: Access denied | www.hltv.org used Cloudflare to restrict access
+    - getTeamStats: Access denied | www.hltv.org used Cloudflare to restrict access
+    - getPlayerRanking: Access denied | www.hltv.org used Cloudflare to restrict access
+    - getPlayerStats: Access denied | www.hltv.org used Cloudflare to restrict access
+
+════════════════════════════════════════════════════════════════════════════════
+  ⚠ 12 out of 16 methods working (75%)
+  Some methods may need additional improvements
+════════════════════════════════════════════════════════════════════════════════
+

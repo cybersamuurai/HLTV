@@ -60,6 +60,10 @@
   "dependencies": {
     "cheerio": "1.0.0",
     "got-scraping": "^3.2.13",
+    "puppeteer": "^24.39.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "puppeteer-real-browser": "^1.4.4",
     "socket.io-client": "2.4.0"
   }
 }

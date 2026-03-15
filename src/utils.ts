@@ -3,24 +3,58 @@ import { randomUUID } from 'crypto'
 
 export const fetchPage = async (
   url: string,
-  loadPage: (url: string) => Promise<string>
+  loadPage: (url: string) => Promise<string>,
+  retries: number = 1
 ): Promise<cheerio.Root> => {
-  const root = cheerio.load(await loadPage(url))
+  let lastError: Error | undefined
 
-  const html = root.html()
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // Add minimal delay before retry attempts
+      if (attempt > 0) {
+        const delay = 500 + Math.random() * 500 // 500-1000ms for retries
+        await sleep(delay)
+      }
 
-  if (
-    html.includes('error code:') ||
-    html.includes('Sorry, you have been blocked') ||
-    html.includes('Checking your browser before accessing') ||
-    html.includes('Enable JavaScript and cookies to continue')
-  ) {
-    throw new Error(
-      'Access denied | www.hltv.org used Cloudflare to restrict access'
-    )
+      const root = cheerio.load(await loadPage(url))
+      const html = root.html()
+
+      if (
+        html.includes('error code:') ||
+        html.includes('Sorry, you have been blocked') ||
+        html.includes('Checking your browser before accessing') ||
+        html.includes('Enable JavaScript and cookies to continue')
+      ) {
+        const error = new Error(
+          'Access denied | www.hltv.org used Cloudflare to restrict access'
+        )
+        lastError = error
+
+        // If Cloudflare blocked us and we have retries left, try again
+        if (attempt < retries) {
+          continue
+        }
+
+        throw error
+      }
+
+      // Success - add tiny delay before returning to avoid rate limiting
+      await sleep(100 + Math.random() * 100) // 100-200ms
+      return root
+
+    } catch (error) {
+      lastError = error as Error
+
+      // If it's the last attempt, throw the error
+      if (attempt >= retries) {
+        throw error
+      }
+
+      // Otherwise, continue to next retry
+    }
   }
 
-  return root
+  throw lastError || new Error('Failed to fetch page')
 }
 
 export const generateRandomSuffix = () => {

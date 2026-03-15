@@ -1,563 +1,329 @@
-> [!WARNING]  
-> This library is no longer actively maintained.
-
+# HLTV API - Инженерная документация                                                   
 
-<h1 align="center">
-  <img src="https://www.hltv.org/img/static/TopLogo2x.png" alt="HLTV logo" width="200">
-  <br>
-  The unofficial HLTV Node.js API
-  <br>
-</h1>
-
-Table of contents
-
-- [Installation](#installation)
-- [Usage](#usage)
-- [API](#api)
-  - [getMatch](#getmatch)
-  - [getMatches](#getmatches)
-  - [getMatchesStats](#getmatchesstats)
-  - [getMatchStats](#getmatchstats)
-  - [getMatchMapStats](#getmatchmapstats)
-  - [getStreams](#getstreams)
-  - [getRecentThreads](#getrecentthreads)
-  - [getTeamRanking](#getteamranking)
-  - [getTeam](#getteam)
-  - [getTeamByName](#getteambyname)
-  - [getTeamStats](#getteamstats)
-  - [getPlayer](#getplayer)
-  - [getPlayerByName](#getplayerbyname)
-  - [getPlayerStats](#getplayerstats)
-  - [getPlayerRanking](#getplayerranking)
-  - [getEvents](#getevents)
-  - [getEvent](#getevent)
-  - [getEventByName](#geteventbyname)
-  - [getPastEvents](#getpastevents)
-  - [getResults](#getresults)
-  - [getNews](#getnews)
-  - [connectToScorebot](#connecttoscorebot)
-  - [TEAM_PLACEHOLDER_IMAGE](#team_placeholder_image)
-  - [PLAYER_PLACEHOLDER_IMAGE](#player_placeholder_image)
-
-## Installation
-
-[![NPM](https://nodei.co/npm/hltv.png)](https://nodei.co/npm/hltv/)
+  Краткое описание                                                                                                                                                                                                     
+  Назначение: Node.js библиотека для извлечения данных о CS:GO/CS2 матчах, турнирах, игроках и командах с сайта hltv.org через веб-скрапинг.                                                                        
+                                                                                                                                                                                                                    
+  Тип системы: NPM пакет / библиотека (не автономный сервис)
 
-## Usage
+  Текущее состояние: 75% endpoints работают, 25% требуют обхода Cloudflare через Puppeteer
 
-:warning: **WARNING:** Abusing this library will likely result in an IP ban from HLTV simply because of Cloudflare bot protection.
+  Местоположение: C:\Users\vokku\git\mcp\HLTV
 
-Please use with caution and try to limit the rate and amount of your requests if you value your access to HLTV. Each method has the number of requests it makes to HLTV documented in this README. This is important if you want to implement some kind of throttling yourself.
+  Состав системы
 
-```javascript
-// In .mjs files and if you're using a bundler
-import HLTV from 'hltv'
-// Or if you're stuck with CommonJS
-const { HLTV } = require('hltv')
-```
-
-#### Configuration
+  Компоненты
 
-You can create an instance of HLTV with a custom config if you want to.
+  - TypeScript библиотека - основной код в src/
+  - Скомпилированный код - CommonJS модули в lib/
+  - Puppeteer bypass - браузерная автоматизация для обхода Cloudflare
+  - Без баз данных - stateless библиотека
+  - Без фоновых процессов - вызывается синхронно
 
-|  Option   |                Type                |         Default value          |                                   Description                                   |
-| :-------: | :--------------------------------: | :----------------------------: | :-----------------------------------------------------------------------------: |
-| loadPage  | (url: string) => Promise\<string\> | based on the 'got' library |      Function that will be called when the library makes a request to HLTV      |
-| httpAgent |             HttpAgent              |           HttpsAgent           | Http agent used when sending a request and connecting to the scorebot websocket |
+  Внешние зависимости
 
-```javascript
-const myHLTV = HLTV.createInstance({ loadPage: (url) => axios.get(url) })
-// or
-const myHLTV = HLTV.createInstance({ loadPage: (url) => fetch(url) })
-// or you can just use the HLTV export directly to use the default settings
-import HLTV from 'hltv'
+  - hltv.org - источник данных (блокирует некоторые /stats/* endpoints через Cloudflare)
+  - NPM registry - для публикации пакета
 
-HLTV.getMatch({ ... })
-```
+  Структура репозитория
 
-**[See config schema](https://github.com/gigobyte/HLTV/blob/master/src/config.ts)**
+  C:\Users\vokku\git\mcp\HLTV\
+  ├── src/                          # TypeScript исходники
+  │   ├── endpoints/               # 23 endpoint файла
+  │   │   ├── getMatches.ts       # Список матчей
+  │   │   ├── getPlayerRanking.ts # Рейтинг игроков (Cloudflare)
+  │   │   ├── getPlayerStats.ts   # Статистика игрока (Cloudflare)
+  │   │   ├── getMatchStats.ts    # Статистика матча (Cloudflare)
+  │   │   ├── getTeamStats.ts     # Статистика команды (Cloudflare)
+  │   │   └── ...                 # Остальные endpoints
+  │   ├── shared/                  # Общие типы (GameMap, Team, Event, etc)
+  │   ├── config.ts               # HTTP конфигурация (got-scraping)
+  │   ├── scraper.ts              # Cheerio wrapper с helper методами
+  │   ├── utils.ts                # Retry logic, fetchPage, sleep
+  │   ├── puppeteer-loader.ts     # Cloudflare bypass (добавлен 2025-03-16)
+  │   └── index.ts                # Публичный API
+  ├── lib/                         # Скомпилированный JS (git ignored, npm published)
+  ├── test*.js                     # Тестовые скрипты
+  ├── tsconfig.json               # TS config для разработки
+  ├── tsconfig.release.json       # TS config для сборки
+  └── package.json                # Dependencies, scripts
 
-## API
+  UNKNOWN: Назначение файлов в корне (playground.ts, некоторые .d.ts файлы)
 
-#### getMatch
+  Критические файлы
 
-Parses most information from a match page (1 request)
+  - src/config.ts:13 - got-scraping настройки, HTTP headers
+  - src/utils.ts:94-145 - fetchPage с Cloudflare detection
+  - src/puppeteer-loader.ts - браузер для обхода Cloudflare
+  - src/scraper.ts:103-123 - cheerio.toArray() с фиксом для cheerio 1.0.0
 
-| Option |  Type  | Default value | Description  |
-| :----: | :----: | :-----------: | :----------: |
-|   id   | number |       -       | The match id |
+  Конфигурация
 
-```javascript
-HLTV.getMatch({ id: 2306295 }).then(res => {
-    ...
-})
-```
+  Environment переменные
 
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getMatch.ts#L79)**
+  Нет env переменных. Все настройки hardcoded.
 
----
+  HTTP конфигурация
 
-#### getMatches
+  Файл: src/config.ts
 
-Parses all matches from the `hltv.org/matches/` page (1 request)
+  Параметры:
+  - timeout: 60000ms - request timeout
+  - retry.limit: 3 (оптимизировано до 1 в utils.ts)
+  - retry delays: 500-1000ms (изначально было 1-10s)
+  - HTTP/2 enabled
+  - Browser fingerprinting: Chrome 120-122, Firefox 120-123, Edge 120
 
-|  Option   |                                              Type                                              | Default Value |                          Description                           |
-| :-------: | :--------------------------------------------------------------------------------------------: | :-----------: | :------------------------------------------------------------: |
-| eventIds  |                                           number[]?                                            |       -       |                  Filter matches by event IDs.                  |
-| eventType | [MatchEventType](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getMatches.ts#L8)? |       -       |                 Filter matches by event type.                  |
-|  filter   |  [MatchFilter](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getMatches.ts#L14)?  |       -       | Filter matches by pre-set categories. Overrides other filters. |
-|  teamIds  |                                           number[]?                                            |       -       |                               -                                |
+  Назначение некоторых headers: неизвестно, скопировано из реальных браузеров
 
-```javascript
-HLTV.getMatches().then((res) => {
-  ...
-})
-```
+  Puppeteer конфигурация
 
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getMatches.ts#L25)**
+  Файл: src/puppeteer-loader.ts
 
-#### getMatchesStats
+  Параметры:
+  headless: false  // VERIFY: может ли работать в headless для Cloudflare?
+  args: ['--start-maximized']
+  turnstile: true  // Cloudflare Turnstile solving
 
-Parses all matches from the `hltv.org/stats/matches` page (1 request per page of results)
+  Поведение:
+  - Создает новую вкладку для каждого HTTP запроса
+  - Переиспользует один экземпляр браузера
+  - Очередь запросов (sequential execution)
+  - Wait 2000ms после загрузки страницы
 
-|          Option          |                                            Type                                            | Default Value |                Description                 |
-| :----------------------: | :----------------------------------------------------------------------------------------: | :-----------: | :----------------------------------------: |
-|        startDate         |                                          string?                                           |       -       |                     -                      |
-|         endDate          |                                          string?                                           |       -       |                     -                      |
-|        matchType         |     [MatchType](https://github.com/gigobyte/HLTV/blob/master/src/shared/MatchType.ts)?     |       -       |                     -                      |
-|           maps           |      [GameMap](https://github.com/gigobyte/HLTV/blob/master/src/shared/GameMap.ts)[]?      |       -       |                     -                      |
-|      rankingFilter       | [RankingFilter](https://github.com/gigobyte/HLTV/blob/master/src/shared/RankingFilter.ts)? |       -       |                     -                      |
-| delayBetweenPageRequests |                                          number?                                           |       0       | Used to prevent CloudFlare throttling (ms) |
+  Запуск
 
-```javascript
-// ! BE CAREFUL, THIS CAN MAKE A LOT OF REQUESTS IF THERE ARE A LOT OF PAGES
-HLTV.getMatchesStats({ startDate: '2017-07-10', endDate: '2017-07-18' }).then((res) => {
-  ...
-})
-```
+  Локальная разработка
 
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getMatchStats.ts#L15)**
+  # Установка зависимостей
+  npm install
 
----
+  # Сборка TypeScript -> CommonJS
+  npm run build
+  # Альтернатива если lib/ существует:
+  rm -rf lib && npm run build
 
-#### getMatchStats
+  # Запуск тестов
+  node test-player-ranking-puppeteer.js           # Тест Cloudflare bypass
+  node test-blocked-endpoints-puppeteer.js        # Тест заблокированных endpoints
+  node all-endpoints-test.js                      # Полный тест (16 endpoints)
+  node quick-test.js                              # Быстрый тест базовых endpoints
 
-Parses info from the `hltv.org/stats/matches/*/*` all maps stats page (1 request)
+  Использование как библиотеки
 
-| Option |  Type  | Default Value | Description |
-| :----: | :----: | :-----------: | :---------: |
-|   id   | number |       -       |      -      |
+  Стандартный режим (без Cloudflare bypass):
+  const { HLTV } = require('./lib/index')
+  const matches = await HLTV.getMatches()
 
-```javascript
-HLTV.getMatchStats({ id: 62979 }).then((res) => {
-  ...
-})
-```
+  Puppeteer режим (для обхода Cloudflare):
+  const { HLTV } = require('./lib/index')
+  const { createPuppeteerLoadPage, closePuppeteerBrowser } = require('./lib/puppeteer-loader')
 
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getMatchStats.ts#L15)**
+  const hltvPuppeteer = HLTV.createInstance({
+    loadPage: createPuppeteerLoadPage()
+  })
 
----
+  const players = await hltvPuppeteer.getPlayerRanking()  // 1624 players, ~40s
+  await closePuppeteerBrowser()
 
-#### getMatchMapStats
+  CI/CD
 
-Parses info from the `hltv.org/stats/matches/mapstatsid/*/*` single map stats page (2 requests)
+  Нет настроенного CI/CD. Renovate bot видно из коммитов обновляет зависимости.
 
-| Option |  Type  | Default Value | Description |
-| :----: | :----: | :-----------: | :---------: |
-|   id   | number |       -       |      -      |
+  Зависимости
 
-```javascript
-HLTV.getMatchMapStats({ id: 49968 }).then((res) => {
-  ...
-})
-```
+  Критические зависимости
 
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getMatchMapStats.ts#L80)**
-
----
-
-#### getStreams
-
-Parses all streams present on the front page of HLTV (1 request + 1 request per stream if `loadLinks` is true)
-
-|  Option   |  Type   | Default Value |                                      Description                                      |
-| :-------: | :-----: | :-----------: | :-----------------------------------------------------------------------------------: |
-| loadLinks | boolean |     false     | Enables parsing of the stream links (every stream is an additional separate request). |
-
-```javascript
-HLTV.getStreams().then((res) => {
-  ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getStreams.ts#L12)**
-
----
-
-#### getRecentThreads
-
-Parses the latest threads on the front page of HLTV (1 request)
-
-| Option | Type | Default Value | Description |
-| :----: | :--: | :-----------: | :---------: |
-|   -    |  -   |       -       |      -      |
-
-```javascript
-HLTV.getRecentThreads().then((res) => {
-  ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getRecentThreads.ts#L11)**
-
-#### getTeamRanking
-
-Parses the info from the `hltv.org/ranking/teams/` page (1 request)
-
-| Option  |                                                                      Type                                                                      | Default Value |                   Description                    |
-| :-----: | :--------------------------------------------------------------------------------------------------------------------------------------------: | :-----------: | :----------------------------------------------: |
-|  year   |                                          2015 \| 2016 \| 2017 \| 2018 \| 2019 \| 2020 \| 2021 \| 2022                                          |       -       |                        -                         |
-|  month  | 'january' \| 'february' \| 'march' \| 'april' \| 'may' \| 'june' \| 'july' \| 'august' \| 'september' \| 'october' \| 'november' \| 'december' |       -       |                        -                         |
-|   day   |                                                                    number?                                                                     |       -       |                        -                         |
-| country |                                                                    string?                                                                     |       -       | Must be capitalized (`'Brazil'`, `'France'` etc) |
-
-```javascript
-// If you don't provide a filter the latest ranking will be parsed
-HLTV.getTeamRanking()
-HLTV.getTeamRanking({ country: 'Thailand' })
-HLTV.getTeamRanking({ year: 2017, month: 'may', day: 29 }).then((res) => {
-  ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getTeamRanking.ts#L6)**
-
----
-
-#### getTeam
-
-Parses the info from the `hltv.org/team/` page (1 request)
-
-| Option |  Type  | Default value | Description |
-| :----: | :----: | :-----------: | :---------: |
-|   id   | number |       -       | The team id |
-
-```javascript
-HLTV.getTeam({ id: 6137 }).then(res => {
-    ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getTeam.ts#L21)**
-
----
-
-#### getTeamByName
-
-Same as getTeam but accepts a team name instead of ID. (2 requests)
-
-| Option |  Type  | Default value |  Description  |
-| :----: | :----: | :-----------: | :-----------: |
-|  name  | string |       -       | The team name |
-
-```javascript
-HLTV.getTeamByName({ name: "BIG" }).then(res => {
-    ...
-})
-```
-
-**[See getTeam schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getTeam.ts#L21)**
-
----
-
-#### getTeamStats
-
-Parses the info from the `hltv.org/stats/teams/*` page (4 requests + 1 more if `currentRosterOnly` is true)
-
-|      Option       |                                            Type                                            | Default value |                Description                 |
-| :---------------: | :----------------------------------------------------------------------------------------: | :-----------: | :----------------------------------------: |
-|        id         |                                           number                                           |       -       |                The team id                 |
-| currentRosterOnly |                                          boolean?                                          |     false     | Return stats about the current roster only |
-|     startDate     |                                          string?                                           |       -       |                     -                      |
-|      endDate      |                                          string?                                           |       -       |                     -                      |
-|     matchType     |     [MatchType](https://github.com/gigobyte/HLTV/blob/master/src/shared/MatchType.ts)?     |       -       |                     -                      |
-|   rankingFilter   | [RankingFilter](https://github.com/gigobyte/HLTV/blob/master/src/shared/RankingFilter.ts)? |       -       |                     -                      |
-|       maps        |      [GameMap](https://github.com/gigobyte/HLTV/blob/master/src/shared/GameMap.ts)[]?      |       -       |                     -                      |
-|      bestOfX      |  [BestOfFilter](https://github.com/gigobyte/HLTV/blob/master/src/shared/BestOfFilter.ts)?  |       -       |                     -                      |
-
-```javascript
-HLTV.getTeamStats({ id: 6137 }).then(res => {
-    ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getTeamStats.ts#L28)**
-
----
-
-#### getPlayer
-
-Parses the info from the `hltv.org/player/*` page (1 request)
-
-| Option |  Type  | Default value |  Description  |
-| :----: | :----: | :-----------: | :-----------: |
-|   id   | number |       -       | The player id |
-
-```javascript
-HLTV.getPlayer({ id: 6137 }).then(res => {
-    ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getPlayer.ts#L20)**
-
----
-
-#### getPlayerByName
-
-Same as getPlayer but accepts a player name instead of ID. (2 requests)
-
-| Option |  Type  | Default value |   Description   |
-| :----: | :----: | :-----------: | :-------------: |
-|  name  | string |       -       | The player name |
-
-```javascript
-HLTV.getPlayerByName({ name: "chrisJ" }).then(res => {
-    ...
-})
-```
-
-**[See getPlayer schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getPlayer.ts#L20)**
-
-#### getPlayerStats
-
-Parses the info from `hltv.org/stats/players/*` (3 requests)
-
-|    Option     |                                            Type                                            | Default value | Description |
-| :-----------: | :----------------------------------------------------------------------------------------: | :-----------: | :---------: |
-|      id       |                                           number                                           |       -       |      -      |
-|   startDate   |                                          string?                                           |       -       |      -      |
-|    endDate    |                                          string?                                           |       -       |      -      |
-|   matchType   |     [MatchType](https://github.com/gigobyte/HLTV/blob/master/src/shared/MatchType.ts)?     |       -       |      -      |
-| rankingFilter | [RankingFilter](https://github.com/gigobyte/HLTV/blob/master/src/shared/RankingFilter.ts)? |       -       |      -      |
-|     maps      |      [GameMap](https://github.com/gigobyte/HLTV/blob/master/src/shared/GameMap.ts)[]?      |       -       |      -      |
-|    bestOfX    |  [BestOfFilter](https://github.com/gigobyte/HLTV/blob/master/src/shared/BestOfFilter.ts)?  |       -       |      -      |
-|   eventIds    |                                         number[]?                                          |       -       |      -      |
-
-```javascript
-HLTV.getPlayerStats({ id: 7998 }).then(res => {
-    ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getPlayerStats.ts#L23)**
-
----
-
-#### getPlayerRanking
-
-Parses the info from `hltv.org/stats/players` page (1 request)
-
-|    Option     |                                            Type                                            | Default value | Description |
-| :-----------: | :----------------------------------------------------------------------------------------: | :-----------: | :---------: |
-|   startDate   |                                          string?                                           |       -       |      -      |
-|    endDate    |                                          string?                                           |       -       |      -      |
-|   matchType   |     [MatchType](https://github.com/gigobyte/HLTV/blob/master/src/shared/MatchType.ts)?     |       -       |      -      |
-| rankingFilter | [RankingFilter](https://github.com/gigobyte/HLTV/blob/master/src/shared/RankingFilter.ts)? |       -       |      -      |
-|     maps      |      [GameMap](https://github.com/gigobyte/HLTV/blob/master/src/shared/GameMap.ts)[]?      |       -       |      -      |
-|  minMapCount  |                                          number?                                           |       -       |      -      |
-|   countries   |                                          string[]                                          |       -       |      -      |
-|    bestOfX    |  [BestOfFilter](https://github.com/gigobyte/HLTV/blob/master/src/shared/BestOfFilter.ts)?  |       -       |      -      |
-
-```javascript
-// If you don't provide a filter the latest ranking will be parsed
-HLTV.getPlayerRanking({ startDate: '2018-07-01', endDate: '2018-10-01' }).then(res => {
-    ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getPlayerRanking.ts#L12)**
-
----
-
-#### getEvents
-
-Parses the info from the `hltv.org/events` page (1 request)
-
-|       Option       |                                        Type                                        | Default value |                     Description                     |
-| :----------------: | :--------------------------------------------------------------------------------: | :-----------: | :-------------------------------------------------: |
-|     eventType      | [EventType](https://github.com/gigobyte/HLTV/blob/master/src/shared/EventType.ts)? |       -       | Event type e.g. EventSize.Major, EventSize.LocalLAN |
-|    prizePoolMin    |                                      number?                                       |       -       |              Minimum prize pool (USD$)              |
-|    prizePoolMax    |                                      number?                                       |       -       |              Maximum prize pool (USD$)              |
-|  attendingTeamIds  |                                     number[]?                                      |       -       |                          -                          |
-| attendingPlayerIds |                                     number[]?                                      |       -       |                          -                          |
-
-```javascript
-HLTV.getEvents().then(res => {
-    ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getEvents.ts#L8)**
-
----
-
-#### getEvent
-
-Parses the info from the `hltv.org/event/` page (1 request)
-
-| Option |  Type  | Default value | Description  |
-| :----: | :----: | :-----------: | :----------: |
-|   id   | number |       -       | The event id |
-
-```javascript
-HLTV.getEvent({ id: 3389 }).then(res => {
-    ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getEvent.ts#L43)**
-
----
-
-#### getEventByName
-
-Same as getEvent but accepts a event name instead of ID. (2 requests)
-
-| Option |  Type  | Default value |  Description   |
-| :----: | :----: | :-----------: | :------------: |
-|  name  | string |       -       | The event name |
-
-```javascript
-HLTV.getEventByName({ name: "IEM Katowice 2019" }).then(res => {
-    ...
-})
-```
-
-**[See getEvent schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getEvent.ts#L43)**
-
----
-
-#### getPastEvents
-
-Parses the info from the `hltv.org/events/archive` page (1 request per page of results)
-
-|          Option          |                                        Type                                        | Default value |                     Description                     |
-| :----------------------: | :--------------------------------------------------------------------------------: | :-----------: | :-------------------------------------------------: |
-|        eventType         | [EventType](https://github.com/gigobyte/HLTV/blob/master/src/shared/EventType.ts)? |       -       | Event type e.g. EventSize.Major, EventSize.LocalLAN |
-|        startDate         |                                      string?                                       |       -       |                          -                          |
-|         endDate          |                                      string?                                       |       -       |                          -                          |
-|       prizePoolMin       |                                      number?                                       |       -       |              Minimum prize pool (USD$)              |
-|       prizePoolMax       |                                      number?                                       |       -       |              Maximum prize pool (USD$)              |
-|     attendingTeamIds     |                                     number[]?                                      |       -       |                          -                          |
-|    attendingPlayerIds    |                                     number[]?                                      |       -       |                          -                          |
-| delayBetweenPageRequests |                                      number?                                       |       0       |     Used to prevent CloudFlare throttling (ms)      |
-
-```javascript
-// ! BE CAREFUL, THIS CAN MAKE A LOT OF REQUESTS IF THERE ARE A LOT OF PAGES
-HLTV.getPastEvents({ startDate: '2019-01-01', endDate: '2019-01-10' }).then(res => {
-    ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getPastEvents.ts#L8)**
-
----
-
-#### getResults
-
-Parses the info from the `hltv.org/results` page (1 request per page of results)
-
-|          Option          |                                              Type                                               | Default value |                Description                 |
-| :----------------------: | :---------------------------------------------------------------------------------------------: | :-----------: | :----------------------------------------: |
-|        startDate         |                                             string?                                             |       -       |                     -                      |
-|         endDate          |                                             string?                                             |       -       |                     -                      |
-|        matchType         | [ResultMatchType](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getResults.ts#L9)? |       -       |                     -                      |
-|          stars           |                                      1 \| 2 \| 3 \| 4 \| 5                                      |       -       |                     -                      |
-|           maps           |        [GameMap](https://github.com/gigobyte/HLTV/blob/master/src/shared/GameMap.ts)[]?         |       -       |                     -                      |
-|        countries         |                                            string[]                                             |       -       |                     -                      |
-|         bestOfX          |    [BestOfFilter](https://github.com/gigobyte/HLTV/blob/master/src/shared/BestOfFilter.ts)?     |       -       |                     -                      |
-|      contentFilters      | [ContentFilter](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getResults.ts#L14)?  |       -       |                     -                      |
-|         eventIds         |                                            number[]?                                            |       -       |                     -                      |
-|        playerIds         |                                            number[]?                                            |       -       |                     -                      |
-|         teamIds          |                                            number[]?                                            |       -       |                     -                      |
-|           game           |    [GameType](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getResults.ts#L21)?    |       -       |                     -                      |
-| delayBetweenPageRequests |                                             number?                                             |       0       | Used to prevent CloudFlare throttling (ms) |
-
-```javascript
-// ! BE CAREFUL, THIS CAN MAKE A LOT OF REQUESTS IF THERE ARE A LOT OF PAGES
-HLTV.getResults({ eventIds: [1617], bestOfX: [BestOfFilter.BO3] }).then(res => {
-    ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getResults.ts#L31)**
-
-#### getNews
-
-Parses the info from the `hltv.org/news/archive/` page (1 request)
-
-|  Option  |                                                                      Type                                                                      | Default Value |                        Description                         |
-| :------: | :--------------------------------------------------------------------------------------------------------------------------------------------: | :-----------: | :--------------------------------------------------------: |
-|   year   |  2005 \| 2006 \| 2007 \| 2008 \| 2009 \| 2010 \| 2011 \| 2012 \| 2013 \| 2014 \| 2015 \| 2016 \| 2017 \| 2018 \| 2019 \| 2020 \| 2021 \| 2022  |       -       | If you specify a `year` you must specify a `month` as well |
-|  month   | 'january' \| 'february' \| 'march' \| 'april' \| 'may' \| 'june' \| 'july' \| 'august' \| 'september' \| 'october' \| 'november' \| 'december' |       -       | If you specify a `month` you must specify a `year` as well |
-| eventIds |                                                                   number[]?                                                                    |       -       |                             -                              |
-
-```javascript
-// If you don't provide a filter the latest news will be parsed
-HLTV.getNews()
-HLTV.getNews({ eventIds: [3491] })
-HLTV.getNews({ year: 2020, month: 'may' }).then((res) => {
-  ...
-})
-```
-
-**[See schema](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/getNews.ts#L7)**
-
-#### connectToScorebot
-
-Presents an interface to receive data when the HLTV scorebot updates
-
-|       Option       |   Type    | Default Value |                                          Description                                           |
-| :----------------: | :-------: | :-----------: | :--------------------------------------------------------------------------------------------: |
-|         id         |  number   |       -       |                                          The match ID                                          |
-| onScoreboardUpdate | function? |       -       |                   Callback that is called when there is new scoreboard data                    |
-|    onLogUpdate     | function? |       -       |                    Callback that is called when there is new game log data                     |
-|  onFullLogUpdate   | function? |       -       | It's still unclear when this is called and with what data, if you find out please let me know! |
-|     onConnect      | function? |       -       |           Callback that is called when a connection with the scorebot is established           |
-|    onDisconnect    | function? |       -       |                     Callback that is called when the scorebot disconnects                      |
-
-```javascript
-HLTV.connectToScorebot({
-  id: 2311609,
-  onScoreboardUpdate: (data, done) => {
-    // if you call done() the socket connection will close.
-  },
-  onLogUpdate: (data, done) => {
-      ...
+  {
+    "got-scraping": "3.2.13",     // HTTP client (downgraded from 4.x - ESM incompatible)
+    "cheerio": "^1.0.0",          // HTML парсинг (breaking changes from 0.x)
+    "puppeteer-real-browser": "^1.3.8",  // Cloudflare bypass (добавлен 2025-03-16)
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
-})
 
-```
+  CRITICAL: got-scraping 4.x несовместим (ESM only, проект использует CommonJS)
 
-The `onLogUpdate` callback is passed an [LogUpdate](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/connectToScorebot.ts#L117) object
+  CRITICAL: cheerio.default не существует в 1.0.0 (фикс в scraper.ts:107-110)
 
-The `onScoreboardUpdate` callback is passed an [ScoreboardUpdate](https://github.com/gigobyte/HLTV/blob/master/src/endpoints/connectToScorebot.ts#L161) object
+  Dev зависимости
 
----
+  {
+    "typescript": "5.8.2",
+    "ts-jest": "29.2.6",
+    "@types/node": "18.19.79"
+  }
 
-#### TEAM_PLACEHOLDER_IMAGE
+  Внешние API
 
-```javascript
-HLTV.TEAM_PLACEHOLDER_IMAGE
-// https://www.hltv.org/img/static/team/placeholder.svg
-```
+  - hltv.org - единственный источник данных
+    - Cloudflare protection на /stats/* endpoints
+    - HTML структура меняется без версионирования
+    - Нет официального API
+    - Rate limiting: unknown (используется sleep 100-200ms между запросами)
 
----
+  Мониторинг
 
-#### PLAYER_PLACEHOLDER_IMAGE
+  Метрики
 
-```javascript
-HLTV.PLAYER_PLACEHOLDER_IMAGE
-// https://static.hltv.org/images/playerprofile/bodyshot/unknown.png
-```
+  Нет встроенных метрик.
+
+  Логирование
+
+  Console.log в нескольких местах:
+  - puppeteer-loader.ts:17 - "[Puppeteer] Launching browser..."
+  - puppeteer-loader.ts:57 - "[Puppeteer] Cloudflare challenge detected..."
+  - puppeteer-loader.ts:71 - "[Puppeteer] Error:"
+
+  UNKNOWN: Система логирования в production не определена
+
+  Тестирование
+
+  Созданные тесты (не автоматизированы):
+  all-endpoints-test.js               # 16 endpoints, ~10 минут
+  test-player-ranking-puppeteer.js    # 1 endpoint, ~40 секунд
+  test-blocked-endpoints-puppeteer.js # 4 endpoints, ~90 секунд
+  quick-test.js                       # 6 endpoints, <5 секунд
+
+  Последние результаты (2025-03-16):
+  - 12/16 endpoints работают без Puppeteer (75%)
+  - 3/4 заблокированных endpoints работают с Puppeteer (75%)
+  - getPlayerStats: partial failure (парсинг проблемы)
+
+  Типовые проблемы
+
+  1. Cloudflare блокировки
+
+  Endpoints блокированные Cloudflare:
+  - getPlayerRanking ✓ решено через Puppeteer (~40s)
+  - getPlayerStats ⚠ частично работает
+  - getMatchStats ✓ решено через Puppeteer (~9s)
+  - getTeamStats ✓ решено через Puppeteer (~25s)
+
+  Симптомы:
+  Error: Access denied | www.hltv.org used Cloudflare to restrict access
+
+  HTML содержит:
+  <title>Just a moment...</title>
+  "Checking your browser before accessing"
+  "Enable JavaScript and cookies to continue"
+
+  Решение: Использовать puppeteer-real-browser (см. раздел Запуск)
+
+  2. HTML структура изменилась
+
+  Примеры сломанных селекторов:
+
+  - .liveMatch-container → [data-match-wrapper] (fixed 2025-03-15)
+  - .upcomingMatch → [data-match-wrapper] (fixed 2025-03-15)
+  - data-zonedgrouping-entry-unix - отсутствует на featured results (fixed with null check)
+
+  Решение: Перехватывать HTML, сохранять в файлы, анализировать новую структуру
+
+  3. TypeScript compilation errors
+
+  Проблема:
+  error TS5055: Cannot write file 'lib/config.d.ts' because it would overwrite input file
+
+  Причина: lib/ содержит старые .d.ts файлы
+
+  Решение:
+  rm -rf lib && npm run build
+
+  4. Puppeteer navigation conflicts
+
+  Симптомы:
+  Error: net::ERR_ABORTED at https://www.hltv.org/stats/...
+
+  Причина: Множественные одновременные вызовы page.goto()
+
+  Решение: Реализована очередь запросов в puppeteer-loader.ts:37-42 + новая вкладка для каждого запроса (line 30)
+
+  5. Dependency incompatibilities
+
+  got-scraping 4.x:
+  Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined
+  Решение: Downgrade до 3.2.13
+
+  cheerio 1.0.0:
+  TypeError: cheerio.default is not a function
+  Решение: Переписан scraper.ts:107-110
+
+  Неизвестные или странные части
+
+  1. generateRandomSuffix()
+
+  Местоположение: utils.ts (используется в getEvent, getPlayer, etc)
+
+  Поведение: Добавляет случайный суффикс к URL
+
+  Назначение: Предположительно для обхода кеша или rate limiting
+
+  TODO: Проверить работает ли без него
+
+  2. Retry delays оптимизация
+
+  Местоположение: utils.ts:102-108
+
+  Изменено: 1-10s → 0.5-1s
+
+  Причина изменения: Таймауты на getResults (607s → <1s после оптимизации)
+
+  VERIFY: Не вызывает ли это больше Cloudflare блокировок?
+
+  3. getResults pagination limit
+
+  Код: getResults.ts:82
+  const maxPages = options.delayBetweenPageRequests !== undefined ? 100 : 1
+
+  Поведение: По умолчанию только 1 страница (100 results), если не указан delay
+
+  Причина: Исторически была бесконечная пагинация, вызывала таймауты
+
+  TODO: Документировать это поведение для пользователей
+
+  4. Множественные HTTP запросы в getPlayerStats
+
+  Код: getPlayerStats.ts:98-117
+  const [$, i$, m$] = await Promise.all([
+    fetchPage('/stats/players/${id}/...'),
+    fetchPage('/stats/players/individual/${id}/...'),
+    fetchPage('/stats/players/matches/${id}/...')
+  ])
+
+  Назначение: Загружает 3 разные страницы параллельно
+
+  UNKNOWN: Почему данные разделены на 3 endpoints на hltv.org
+
+  5. .preload class в body
+
+  Местоположение: HTML hltv.org
+
+  UNKNOWN: Назначение класса, удаляется ли он динамически?
+
+  6. Vulnerability count: 22-24
+
+  Вывод npm install:
+  22 vulnerabilities (2 low, 10 moderate, 7 high, 3 critical)
+
+  Источник: Предположительно Puppeteer и транзитивные зависимости
+
+  TODO: Аудит безопасности перед production использованием
+
+  7. Два типа rating в getPlayerRanking
+
+  Поле в результате: rating1: 1.27
+
+  UNKNOWN: Есть ли rating2? В чем разница? Почему только rating1?
+
+  ---
+  Дата фиксации
+
+  2025-03-16
+
+  Версия: 3.5.0 (из package.json)
+
+  Git branch: master
+
+  Last commit: dd29189 (chore(deps): update dependency @types/node to v18.19.79)
+
+  Статус репозитория: Clean (no uncommitted changes)

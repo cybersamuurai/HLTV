@@ -1,28 +1,47 @@
 const { HLTV } = require('./lib/index.js')
 
 async function quickTest() {
-  console.log('Testing HLTV library...\n')
+  console.log('Quick test of critical endpoints...\n')
 
-  try {
-    console.log('Test 1: getMatches()')
-    const matches = await HLTV.getMatches()
-    console.log(`✓ Success! Found ${matches.length} matches`)
+  const tests = [
+    { name: 'getMatches', fn: () => HLTV.getMatches() },
+    { name: 'getTeamRanking', fn: () => HLTV.getTeamRanking() },
+    { name: 'getEvents', fn: () => HLTV.getEvents() },
+    { name: 'getNews', fn: () => HLTV.getNews() },
+    { name: 'getRecentThreads', fn: () => HLTV.getRecentThreads() },
+    { name: 'getStreams', fn: () => HLTV.getStreams() }
+  ]
 
-    if (matches.length > 0) {
-      const match = matches[0]
-      console.log(`\nFirst match example:`)
-      console.log(`  Team 1: ${match.team1?.name || 'TBD'}`)
-      console.log(`  Team 2: ${match.team2?.name || 'TBD'}`)
-      console.log(`  Format: ${match.format || 'unknown'}`)
-      console.log(`  Date: ${match.date || 'TBD'}`)
+  for (const test of tests) {
+    try {
+      console.log(`Testing ${test.name}...`)
+      const result = await test.fn()
+      const count = Array.isArray(result) ? result.length : 'N/A'
+      console.log(`  ✓ ${count} items\n`)
+    } catch (error) {
+      console.log(`  ✗ ${error.message}\n`)
     }
+  }
 
-    return true
-  } catch (error) {
-    console.error('\n✗ Error:', error.message)
-    console.error('\nStack trace:')
-    console.error(error.stack)
-    return false
+  console.log('\nTesting potentially blocked endpoints (with timeout)...\n')
+
+  const blockedTests = [
+    { name: 'getResults', fn: () => HLTV.getResults() },
+    { name: 'getPlayerRanking', fn: () => HLTV.getPlayerRanking() }
+  ]
+
+  for (const test of blockedTests) {
+    try {
+      console.log(`Testing ${test.name}...`)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout after 15s')), 15000)
+      )
+      const result = await Promise.race([test.fn(), timeoutPromise])
+      const count = Array.isArray(result) ? result.length : 'N/A'
+      console.log(`  ✓ ${count} items\n`)
+    } catch (error) {
+      console.log(`  ✗ ${error.message}\n`)
+    }
   }
 }
 

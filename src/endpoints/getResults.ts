@@ -79,6 +79,7 @@ export const getResults =
     let page = 0
     let $: HLTVPage
     let results: FullMatchResult[] = []
+    const maxPages = options.delayBetweenPageRequests !== undefined ? 100 : 1 // Default to 1 page unless explicitly paginating
 
     do {
       await sleep(options.delayBetweenPageRequests ?? 0)
@@ -143,7 +144,7 @@ export const getResults =
           })
           .filter(notNull)
       )
-    } while ($('.result-con').exists())
+    } while ($('.result-con').exists() && page < maxPages)
 
     return results
   }

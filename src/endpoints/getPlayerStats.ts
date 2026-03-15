@@ -122,12 +122,12 @@ export const getPlayerStats =
 
     const imageUrl =
       $('.summaryBodyshot').attr('src') || $('.summarySquare').attr('src')
-    const image = imageUrl.includes('bodyshot/unknown.png')
+    const image = imageUrl && imageUrl.includes('bodyshot/unknown.png')
       ? undefined
       : imageUrl
 
     const age = $('.summaryPlayerAge').textThen((x) =>
-      parseNumber(x.split(' ')[0])
+      x ? parseNumber(x.split(' ')[0]) : undefined
     )
 
     const country = {

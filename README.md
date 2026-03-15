@@ -1,329 +1,364 @@
-# HLTV API - Инженерная документация                                                   
+# HLTV API - Инженерная документация
 
-  Краткое описание                                                                                                                                                                                                     
-  Назначение: Node.js библиотека для извлечения данных о CS:GO/CS2 матчах, турнирах, игроках и командах с сайта hltv.org через веб-скрапинг.                                                                        
-                                                                                                                                                                                                                    
-  Тип системы: NPM пакет / библиотека (не автономный сервис)
+## Краткое описание
 
-  Текущее состояние: 75% endpoints работают, 25% требуют обхода Cloudflare через Puppeteer
+**Назначение:** Node.js библиотека для извлечения данных о CS:GO/CS2 матчах, турнирах, игроках и командах с сайта hltv.org через веб-скрапинг.
 
-  Местоположение: C:\Users\vokku\git\mcp\HLTV
+**Тип системы:** NPM пакет / библиотека (не автономный сервис)
 
-  Состав системы
+**Текущее состояние:** 75% endpoints работают, 25% требуют обхода Cloudflare через Puppeteer
 
-  Компоненты
+**Местоположение:** `C:\Users\vokku\git\mcp\HLTV`
 
-  - TypeScript библиотека - основной код в src/
-  - Скомпилированный код - CommonJS модули в lib/
-  - Puppeteer bypass - браузерная автоматизация для обхода Cloudflare
-  - Без баз данных - stateless библиотека
-  - Без фоновых процессов - вызывается синхронно
+## Состав системы
 
-  Внешние зависимости
+### Компоненты
 
-  - hltv.org - источник данных (блокирует некоторые /stats/* endpoints через Cloudflare)
-  - NPM registry - для публикации пакета
+- TypeScript библиотека - основной код в `src/`
+- Скомпилированный код - CommonJS модули в `lib/`
+- Puppeteer bypass - браузерная автоматизация для обхода Cloudflare
+- Без баз данных - stateless библиотека
+- Без фоновых процессов - вызывается синхронно
 
-  Структура репозитория
+### Внешние зависимости
 
-  C:\Users\vokku\git\mcp\HLTV\
-  ├── src/                          # TypeScript исходники
-  │   ├── endpoints/               # 23 endpoint файла
-  │   │   ├── getMatches.ts       # Список матчей
-  │   │   ├── getPlayerRanking.ts # Рейтинг игроков (Cloudflare)
-  │   │   ├── getPlayerStats.ts   # Статистика игрока (Cloudflare)
-  │   │   ├── getMatchStats.ts    # Статистика матча (Cloudflare)
-  │   │   ├── getTeamStats.ts     # Статистика команды (Cloudflare)
-  │   │   └── ...                 # Остальные endpoints
-  │   ├── shared/                  # Общие типы (GameMap, Team, Event, etc)
-  │   ├── config.ts               # HTTP конфигурация (got-scraping)
-  │   ├── scraper.ts              # Cheerio wrapper с helper методами
-  │   ├── utils.ts                # Retry logic, fetchPage, sleep
-  │   ├── puppeteer-loader.ts     # Cloudflare bypass (добавлен 2025-03-16)
-  │   └── index.ts                # Публичный API
-  ├── lib/                         # Скомпилированный JS (git ignored, npm published)
-  ├── test*.js                     # Тестовые скрипты
-  ├── tsconfig.json               # TS config для разработки
-  ├── tsconfig.release.json       # TS config для сборки
-  └── package.json                # Dependencies, scripts
+- **hltv.org** - источник данных (блокирует некоторые `/stats/*` endpoints через Cloudflare)
+- **NPM registry** - для публикации пакета
 
-  UNKNOWN: Назначение файлов в корне (playground.ts, некоторые .d.ts файлы)
+### Структура репозитория
 
-  Критические файлы
+```
+C:\Users\vokku\git\mcp\HLTV\
+├── src/                          # TypeScript исходники
+│   ├── endpoints/               # 23 endpoint файла
+│   │   ├── getMatches.ts       # Список матчей
+│   │   ├── getPlayerRanking.ts # Рейтинг игроков (Cloudflare)
+│   │   ├── getPlayerStats.ts   # Статистика игрока (Cloudflare)
+│   │   ├── getMatchStats.ts    # Статистика матча (Cloudflare)
+│   │   ├── getTeamStats.ts     # Статистика команды (Cloudflare)
+│   │   └── ...                 # Остальные endpoints
+│   ├── shared/                  # Общие типы (GameMap, Team, Event, etc)
+│   ├── config.ts               # HTTP конфигурация (got-scraping)
+│   ├── scraper.ts              # Cheerio wrapper с helper методами
+│   ├── utils.ts                # Retry logic, fetchPage, sleep
+│   ├── puppeteer-loader.ts     # Cloudflare bypass (добавлен 2025-03-16)
+│   └── index.ts                # Публичный API
+├── lib/                         # Скомпилированный JS (git ignored, npm published)
+├── test*.js                     # Тестовые скрипты
+├── tsconfig.json               # TS config для разработки
+├── tsconfig.release.json       # TS config для сборки
+└── package.json                # Dependencies, scripts
+```
 
-  - src/config.ts:13 - got-scraping настройки, HTTP headers
-  - src/utils.ts:94-145 - fetchPage с Cloudflare detection
-  - src/puppeteer-loader.ts - браузер для обхода Cloudflare
-  - src/scraper.ts:103-123 - cheerio.toArray() с фиксом для cheerio 1.0.0
+> **UNKNOWN:** Назначение файлов в корне (playground.ts, некоторые .d.ts файлы)
 
-  Конфигурация
+### Критические файлы
 
-  Environment переменные
+- `src/config.ts:13` - got-scraping настройки, HTTP headers
+- `src/utils.ts:94-145` - fetchPage с Cloudflare detection
+- `src/puppeteer-loader.ts` - браузер для обхода Cloudflare
+- `src/scraper.ts:103-123` - cheerio.toArray() с фиксом для cheerio 1.0.0
 
-  Нет env переменных. Все настройки hardcoded.
+## Конфигурация
 
-  HTTP конфигурация
+### Environment переменные
 
-  Файл: src/config.ts
+Нет env переменных. Все настройки hardcoded.
 
-  Параметры:
-  - timeout: 60000ms - request timeout
-  - retry.limit: 3 (оптимизировано до 1 в utils.ts)
-  - retry delays: 500-1000ms (изначально было 1-10s)
-  - HTTP/2 enabled
-  - Browser fingerprinting: Chrome 120-122, Firefox 120-123, Edge 120
+### HTTP конфигурация
 
-  Назначение некоторых headers: неизвестно, скопировано из реальных браузеров
+**Файл:** `src/config.ts`
 
-  Puppeteer конфигурация
+**Параметры:**
+- `timeout: 60000ms` - request timeout
+- `retry.limit: 3` (оптимизировано до 1 в utils.ts)
+- `retry delays: 500-1000ms` (изначально было 1-10s)
+- HTTP/2 enabled
+- Browser fingerprinting: Chrome 120-122, Firefox 120-123, Edge 120
 
-  Файл: src/puppeteer-loader.ts
+> Назначение некоторых headers: неизвестно, скопировано из реальных браузеров
 
-  Параметры:
-  headless: false  // VERIFY: может ли работать в headless для Cloudflare?
-  args: ['--start-maximized']
-  turnstile: true  // Cloudflare Turnstile solving
+### Puppeteer конфигурация
 
-  Поведение:
-  - Создает новую вкладку для каждого HTTP запроса
-  - Переиспользует один экземпляр браузера
-  - Очередь запросов (sequential execution)
-  - Wait 2000ms после загрузки страницы
+**Файл:** `src/puppeteer-loader.ts`
 
-  Запуск
+**Параметры:**
+```javascript
+headless: false  // VERIFY: может ли работать в headless для Cloudflare?
+args: ['--start-maximized']
+turnstile: true  // Cloudflare Turnstile solving
+```
 
-  Локальная разработка
+**Поведение:**
+- Создает новую вкладку для каждого HTTP запроса
+- Переиспользует один экземпляр браузера
+- Очередь запросов (sequential execution)
+- Wait 2000ms после загрузки страницы
 
-  # Установка зависимостей
-  npm install
+## Запуск
 
-  # Сборка TypeScript -> CommonJS
-  npm run build
-  # Альтернатива если lib/ существует:
-  rm -rf lib && npm run build
+### Локальная разработка
 
-  # Запуск тестов
-  node test-player-ranking-puppeteer.js           # Тест Cloudflare bypass
-  node test-blocked-endpoints-puppeteer.js        # Тест заблокированных endpoints
-  node all-endpoints-test.js                      # Полный тест (16 endpoints)
-  node quick-test.js                              # Быстрый тест базовых endpoints
+```bash
+# Установка зависимостей
+npm install
 
-  Использование как библиотеки
+# Сборка TypeScript -> CommonJS
+npm run build
+# Альтернатива если lib/ существует:
+rm -rf lib && npm run build
 
-  Стандартный режим (без Cloudflare bypass):
-  const { HLTV } = require('./lib/index')
-  const matches = await HLTV.getMatches()
+# Запуск тестов
+node test-player-ranking-puppeteer.js           # Тест Cloudflare bypass
+node test-blocked-endpoints-puppeteer.js        # Тест заблокированных endpoints
+node all-endpoints-test.js                      # Полный тест (16 endpoints)
+node quick-test.js                              # Быстрый тест базовых endpoints
+```
 
-  Puppeteer режим (для обхода Cloudflare):
-  const { HLTV } = require('./lib/index')
-  const { createPuppeteerLoadPage, closePuppeteerBrowser } = require('./lib/puppeteer-loader')
+### Использование как библиотеки
 
-  const hltvPuppeteer = HLTV.createInstance({
-    loadPage: createPuppeteerLoadPage()
-  })
+**Стандартный режим (без Cloudflare bypass):**
+```javascript
+const { HLTV } = require('./lib/index')
+const matches = await HLTV.getMatches()
+```
 
-  const players = await hltvPuppeteer.getPlayerRanking()  // 1624 players, ~40s
-  await closePuppeteerBrowser()
+**Puppeteer режим (для обхода Cloudflare):**
+```javascript
+const { HLTV } = require('./lib/index')
+const { createPuppeteerLoadPage, closePuppeteerBrowser } = require('./lib/puppeteer-loader')
 
-  CI/CD
+const hltvPuppeteer = HLTV.createInstance({
+  loadPage: createPuppeteerLoadPage()
+})
 
-  Нет настроенного CI/CD. Renovate bot видно из коммитов обновляет зависимости.
+const players = await hltvPuppeteer.getPlayerRanking()  // 1624 players, ~40s
+await closePuppeteerBrowser()
+```
 
-  Зависимости
+### CI/CD
 
-  Критические зависимости
+Нет настроенного CI/CD. Renovate bot видно из коммитов обновляет зависимости.
 
-  {
-    "got-scraping": "3.2.13",     // HTTP client (downgraded from 4.x - ESM incompatible)
-    "cheerio": "^1.0.0",          // HTML парсинг (breaking changes from 0.x)
-    "puppeteer-real-browser": "^1.3.8",  // Cloudflare bypass (добавлен 2025-03-16)
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
-  }
+## Зависимости
 
-  CRITICAL: got-scraping 4.x несовместим (ESM only, проект использует CommonJS)
+### Критические зависимости
 
-  CRITICAL: cheerio.default не существует в 1.0.0 (фикс в scraper.ts:107-110)
+```json
+{
+  "got-scraping": "3.2.13",     // HTTP client (downgraded from 4.x - ESM incompatible)
+  "cheerio": "^1.0.0",          // HTML парсинг (breaking changes from 0.x)
+  "puppeteer-real-browser": "^1.3.8",  // Cloudflare bypass (добавлен 2025-03-16)
+  "puppeteer-extra": "^3.3.6",
+  "puppeteer-extra-plugin-stealth": "^2.11.2"
+}
+```
 
-  Dev зависимости
+> **CRITICAL:** got-scraping 4.x несовместим (ESM only, проект использует CommonJS)
 
-  {
-    "typescript": "5.8.2",
-    "ts-jest": "29.2.6",
-    "@types/node": "18.19.79"
-  }
+> **CRITICAL:** cheerio.default не существует в 1.0.0 (фикс в scraper.ts:107-110)
 
-  Внешние API
+### Dev зависимости
 
-  - hltv.org - единственный источник данных
-    - Cloudflare protection на /stats/* endpoints
-    - HTML структура меняется без версионирования
-    - Нет официального API
-    - Rate limiting: unknown (используется sleep 100-200ms между запросами)
+```json
+{
+  "typescript": "5.8.2",
+  "ts-jest": "29.2.6",
+  "@types/node": "18.19.79"
+}
+```
 
-  Мониторинг
+## Внешние API
 
-  Метрики
+- **hltv.org** - единственный источник данных
+  - Cloudflare protection на `/stats/*` endpoints
+  - HTML структура меняется без версионирования
+  - Нет официального API
+  - Rate limiting: unknown (используется sleep 100-200ms между запросами)
 
-  Нет встроенных метрик.
+## Мониторинг
 
-  Логирование
+### Метрики
 
-  Console.log в нескольких местах:
-  - puppeteer-loader.ts:17 - "[Puppeteer] Launching browser..."
-  - puppeteer-loader.ts:57 - "[Puppeteer] Cloudflare challenge detected..."
-  - puppeteer-loader.ts:71 - "[Puppeteer] Error:"
+Нет встроенных метрик.
 
-  UNKNOWN: Система логирования в production не определена
+### Логирование
 
-  Тестирование
+Console.log в нескольких местах:
+- `puppeteer-loader.ts:17` - "[Puppeteer] Launching browser..."
+- `puppeteer-loader.ts:57` - "[Puppeteer] Cloudflare challenge detected..."
+- `puppeteer-loader.ts:71` - "[Puppeteer] Error:"
 
-  Созданные тесты (не автоматизированы):
-  all-endpoints-test.js               # 16 endpoints, ~10 минут
-  test-player-ranking-puppeteer.js    # 1 endpoint, ~40 секунд
-  test-blocked-endpoints-puppeteer.js # 4 endpoints, ~90 секунд
-  quick-test.js                       # 6 endpoints, <5 секунд
+> **UNKNOWN:** Система логирования в production не определена
 
-  Последние результаты (2025-03-16):
-  - 12/16 endpoints работают без Puppeteer (75%)
-  - 3/4 заблокированных endpoints работают с Puppeteer (75%)
-  - getPlayerStats: partial failure (парсинг проблемы)
+## Тестирование
 
-  Типовые проблемы
+**Созданные тесты (не автоматизированы):**
+- `all-endpoints-test.js` - 16 endpoints, ~10 минут
+- `test-player-ranking-puppeteer.js` - 1 endpoint, ~40 секунд
+- `test-blocked-endpoints-puppeteer.js` - 4 endpoints, ~90 секунд
+- `quick-test.js` - 6 endpoints, <5 секунд
 
-  1. Cloudflare блокировки
+**Последние результаты (2025-03-16):**
+- 12/16 endpoints работают без Puppeteer (75%)
+- 3/4 заблокированных endpoints работают с Puppeteer (75%)
+- getPlayerStats: partial failure (парсинг проблемы)
 
-  Endpoints блокированные Cloudflare:
-  - getPlayerRanking ✓ решено через Puppeteer (~40s)
-  - getPlayerStats ⚠ частично работает
-  - getMatchStats ✓ решено через Puppeteer (~9s)
-  - getTeamStats ✓ решено через Puppeteer (~25s)
+## Типовые проблемы
 
-  Симптомы:
-  Error: Access denied | www.hltv.org used Cloudflare to restrict access
+### 1. Cloudflare блокировки
 
-  HTML содержит:
-  <title>Just a moment...</title>
-  "Checking your browser before accessing"
-  "Enable JavaScript and cookies to continue"
+**Endpoints блокированные Cloudflare:**
+- `getPlayerRanking` ✓ решено через Puppeteer (~40s)
+- `getPlayerStats` ⚠ частично работает
+- `getMatchStats` ✓ решено через Puppeteer (~9s)
+- `getTeamStats` ✓ решено через Puppeteer (~25s)
 
-  Решение: Использовать puppeteer-real-browser (см. раздел Запуск)
+**Симптомы:**
+```
+Error: Access denied | www.hltv.org used Cloudflare to restrict access
+```
 
-  2. HTML структура изменилась
+**HTML содержит:**
+```html
+<title>Just a moment...</title>
+"Checking your browser before accessing"
+"Enable JavaScript and cookies to continue"
+```
 
-  Примеры сломанных селекторов:
+**Решение:** Использовать puppeteer-real-browser (см. раздел Запуск)
 
-  - .liveMatch-container → [data-match-wrapper] (fixed 2025-03-15)
-  - .upcomingMatch → [data-match-wrapper] (fixed 2025-03-15)
-  - data-zonedgrouping-entry-unix - отсутствует на featured results (fixed with null check)
+### 2. HTML структура изменилась
 
-  Решение: Перехватывать HTML, сохранять в файлы, анализировать новую структуру
+**Примеры сломанных селекторов:**
+- `.liveMatch-container` → `[data-match-wrapper]` (fixed 2025-03-15)
+- `.upcomingMatch` → `[data-match-wrapper]` (fixed 2025-03-15)
+- `data-zonedgrouping-entry-unix` - отсутствует на featured results (fixed with null check)
 
-  3. TypeScript compilation errors
+**Решение:** Перехватывать HTML, сохранять в файлы, анализировать новую структуру
 
-  Проблема:
-  error TS5055: Cannot write file 'lib/config.d.ts' because it would overwrite input file
+### 3. TypeScript compilation errors
 
-  Причина: lib/ содержит старые .d.ts файлы
+**Проблема:**
+```
+error TS5055: Cannot write file 'lib/config.d.ts' because it would overwrite input file
+```
 
-  Решение:
-  rm -rf lib && npm run build
+**Причина:** `lib/` содержит старые .d.ts файлы
 
-  4. Puppeteer navigation conflicts
+**Решение:**
+```bash
+rm -rf lib && npm run build
+```
 
-  Симптомы:
-  Error: net::ERR_ABORTED at https://www.hltv.org/stats/...
+### 4. Puppeteer navigation conflicts
 
-  Причина: Множественные одновременные вызовы page.goto()
+**Симптомы:**
+```
+Error: net::ERR_ABORTED at https://www.hltv.org/stats/...
+```
 
-  Решение: Реализована очередь запросов в puppeteer-loader.ts:37-42 + новая вкладка для каждого запроса (line 30)
+**Причина:** Множественные одновременные вызовы `page.goto()`
 
-  5. Dependency incompatibilities
+**Решение:** Реализована очередь запросов в `puppeteer-loader.ts:37-42` + новая вкладка для каждого запроса (line 30)
 
-  got-scraping 4.x:
-  Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined
-  Решение: Downgrade до 3.2.13
+### 5. Dependency incompatibilities
 
-  cheerio 1.0.0:
-  TypeError: cheerio.default is not a function
-  Решение: Переписан scraper.ts:107-110
+**got-scraping 4.x:**
+```
+Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined
+```
+**Решение:** Downgrade до 3.2.13
 
-  Неизвестные или странные части
+**cheerio 1.0.0:**
+```
+TypeError: cheerio.default is not a function
+```
+**Решение:** Переписан `scraper.ts:107-110`
 
-  1. generateRandomSuffix()
+## Неизвестные или странные части
 
-  Местоположение: utils.ts (используется в getEvent, getPlayer, etc)
+### 1. generateRandomSuffix()
 
-  Поведение: Добавляет случайный суффикс к URL
+**Местоположение:** `utils.ts` (используется в getEvent, getPlayer, etc)
 
-  Назначение: Предположительно для обхода кеша или rate limiting
+**Поведение:** Добавляет случайный суффикс к URL
 
-  TODO: Проверить работает ли без него
+**Назначение:** Предположительно для обхода кеша или rate limiting
 
-  2. Retry delays оптимизация
+> **TODO:** Проверить работает ли без него
 
-  Местоположение: utils.ts:102-108
+### 2. Retry delays оптимизация
 
-  Изменено: 1-10s → 0.5-1s
+**Местоположение:** `utils.ts:102-108`
 
-  Причина изменения: Таймауты на getResults (607s → <1s после оптимизации)
+**Изменено:** 1-10s → 0.5-1s
 
-  VERIFY: Не вызывает ли это больше Cloudflare блокировок?
+**Причина изменения:** Таймауты на getResults (607s → <1s после оптимизации)
 
-  3. getResults pagination limit
+> **VERIFY:** Не вызывает ли это больше Cloudflare блокировок?
 
-  Код: getResults.ts:82
-  const maxPages = options.delayBetweenPageRequests !== undefined ? 100 : 1
+### 3. getResults pagination limit
 
-  Поведение: По умолчанию только 1 страница (100 results), если не указан delay
+**Код:** `getResults.ts:82`
+```javascript
+const maxPages = options.delayBetweenPageRequests !== undefined ? 100 : 1
+```
 
-  Причина: Исторически была бесконечная пагинация, вызывала таймауты
+**Поведение:** По умолчанию только 1 страница (100 results), если не указан delay
 
-  TODO: Документировать это поведение для пользователей
+**Причина:** Исторически была бесконечная пагинация, вызывала таймауты
 
-  4. Множественные HTTP запросы в getPlayerStats
+> **TODO:** Документировать это поведение для пользователей
 
-  Код: getPlayerStats.ts:98-117
-  const [$, i$, m$] = await Promise.all([
-    fetchPage('/stats/players/${id}/...'),
-    fetchPage('/stats/players/individual/${id}/...'),
-    fetchPage('/stats/players/matches/${id}/...')
-  ])
+### 4. Множественные HTTP запросы в getPlayerStats
 
-  Назначение: Загружает 3 разные страницы параллельно
+**Код:** `getPlayerStats.ts:98-117`
+```javascript
+const [$, i$, m$] = await Promise.all([
+  fetchPage('/stats/players/${id}/...'),
+  fetchPage('/stats/players/individual/${id}/...'),
+  fetchPage('/stats/players/matches/${id}/...')
+])
+```
 
-  UNKNOWN: Почему данные разделены на 3 endpoints на hltv.org
+**Назначение:** Загружает 3 разные страницы параллельно
 
-  5. .preload class в body
+> **UNKNOWN:** Почему данные разделены на 3 endpoints на hltv.org
 
-  Местоположение: HTML hltv.org
+### 5. .preload class в body
 
-  UNKNOWN: Назначение класса, удаляется ли он динамически?
+**Местоположение:** HTML hltv.org
 
-  6. Vulnerability count: 22-24
+> **UNKNOWN:** Назначение класса, удаляется ли он динамически?
 
-  Вывод npm install:
-  22 vulnerabilities (2 low, 10 moderate, 7 high, 3 critical)
+### 6. Vulnerability count: 22-24
 
-  Источник: Предположительно Puppeteer и транзитивные зависимости
+**Вывод npm install:**
+```
+22 vulnerabilities (2 low, 10 moderate, 7 high, 3 critical)
+```
 
-  TODO: Аудит безопасности перед production использованием
+**Источник:** Предположительно Puppeteer и транзитивные зависимости
 
-  7. Два типа rating в getPlayerRanking
+> **TODO:** Аудит безопасности перед production использованием
 
-  Поле в результате: rating1: 1.27
+### 7. Два типа rating в getPlayerRanking
 
-  UNKNOWN: Есть ли rating2? В чем разница? Почему только rating1?
+**Поле в результате:** `rating1: 1.27`
 
-  ---
-  Дата фиксации
+> **UNKNOWN:** Есть ли rating2? В чем разница? Почему только rating1?
 
-  2025-03-16
+---
 
-  Версия: 3.5.0 (из package.json)
+## Дата фиксации
 
-  Git branch: master
+**Дата:** 2025-03-16
 
-  Last commit: dd29189 (chore(deps): update dependency @types/node to v18.19.79)
+**Версия:** 3.5.0 (из package.json)
 
-  Статус репозитория: Clean (no uncommitted changes)
+**Git branch:** master
+
+**Last commit:** dd29189 (chore(deps): update dependency @types/node to v18.19.79)
+
+**Статус репозитория:** Clean (no uncommitted changes)

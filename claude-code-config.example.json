@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "hltv": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/HLTV/lib/mcp-server.js"
+      ],
+      "env": {},
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}

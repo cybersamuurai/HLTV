@@ -18,10 +18,18 @@ export const createPuppeteerLoadPage = () => {
 
           // Launch browser if not already running
           if (!browserInstance) {
-            console.log('[Puppeteer] Launching browser (first request)...')
+            console.log('[Puppeteer] Launching browser in headless mode (first request)...')
             const { browser, page } = await connect({
-              headless: false, // Use visible browser for better Cloudflare bypass
-              args: ['--start-maximized'],
+              headless: true, // Headless mode for MCP server
+              args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-features=IsolateOrigins,site-per-process',
+                '--window-size=1920,1080',
+                '--disable-gpu'
+              ],
               customConfig: {},
               turnstile: true, // Enable Cloudflare Turnstile solving
               connectOption: {},

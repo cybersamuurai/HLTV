@@ -4,6 +4,9 @@
   "description": "The unofficial HLTV Node.js API",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "bin": {
+    "hltv-mcp-server": "lib/mcp-server.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.release.json",
     "start": "ts-node src/playground",
@@ -58,12 +61,14 @@
     "typescript": "5.8.2"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "cheerio": "1.0.0",
     "got-scraping": "^3.2.13",
     "puppeteer": "^24.39.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "puppeteer-real-browser": "^1.4.4",
-    "socket.io-client": "2.4.0"
+    "socket.io-client": "2.4.0",
+    "zod": "^4.3.6"
   }
 }

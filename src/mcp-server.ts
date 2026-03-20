@@ -18,16 +18,19 @@ const hltv = HLTV
  *
  * Provides access to CS:GO/CS2 esports data from HLTV.org
  *
- * Available endpoints (12 total):
- * - Matches: getMatches, getMatch, getResults
- * - Events: getEvents, getEvent, getPastEvents
- * - Teams: getTeamRanking, getTeam
- * - Players: getPlayer
+ * Available endpoints (27 total):
+ * - Matches: getMatches, getMatch, getResults, getMatchStats, getMatchMapStats, getMatchesStats
+ * - Events: getEvents, getEvent, getPastEvents, getEventByName
+ * - Teams: getTeamRanking, getTeam, getTeamByName, getTeamStats
+ * - Players: getPlayer, getPlayerByName, getPlayerRanking, getPlayerStats
  * - News: getNews, getRecentThreads
- * - Misc: getStreams
+ * - Misc: getStreams, connectToScorebot
+ * - Fantasy (AUTH REQUIRED): getTournaments, getPlayers, getTeam, createTeam, getLeaderboard
  *
- * Note: Some endpoints (getPlayerRanking, getPlayerStats, getMatchStats, getTeamStats)
- * are blocked by Cloudflare and not available in this MCP server.
+ * Note: Some stats endpoints may be blocked by Cloudflare (getPlayerRanking, getPlayerStats,
+ * getMatchStats, getTeamStats). Use Puppeteer mode if needed (set hltvPuppeteerEnabled=true).
+ *
+ * Fantasy endpoints require authentication. Run `npm run login` first to save credentials.
  */
 
 // Define tools
@@ -198,6 +201,293 @@ const tools: Tool[] = [
       type: 'object',
       properties: {},
       required: []
+    }
+  },
+  {
+    name: 'hltv_fantasy_get_tournaments',
+    description:
+      'Get available Fantasy tournaments on HLTV. REQUIRES AUTHENTICATION: Must run npm run login first. Returns tournament ID, name, status, and dates.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'hltv_fantasy_get_players',
+    description:
+      'Get available players for a Fantasy tournament. REQUIRES AUTHENTICATION. Returns player ID, name, team, price, and points.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tournamentId: {
+          type: 'number',
+          description: 'Fantasy tournament ID'
+        }
+      },
+      required: ['tournamentId']
+    }
+  },
+  {
+    name: 'hltv_fantasy_get_team',
+    description:
+      'Get your Fantasy team for a tournament. REQUIRES AUTHENTICATION. Returns your team composition, total price, points, and rank.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tournamentId: {
+          type: 'number',
+          description: 'Fantasy tournament ID'
+        }
+      },
+      required: ['tournamentId']
+    }
+  },
+  {
+    name: 'hltv_fantasy_create_team',
+    description:
+      'Create or update your Fantasy team. REQUIRES AUTHENTICATION. Provide tournament ID and array of 5 player IDs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tournamentId: {
+          type: 'number',
+          description: 'Fantasy tournament ID'
+        },
+        playerIds: {
+          type: 'array',
+          items: { type: 'number' },
+          description: 'Array of 5 player IDs for your team'
+        }
+      },
+      required: ['tournamentId', 'playerIds']
+    }
+  },
+  {
+    name: 'hltv_fantasy_get_leaderboard',
+    description:
+      'Get Fantasy tournament leaderboard. REQUIRES AUTHENTICATION. Returns top players with rank, username, and points.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tournamentId: {
+          type: 'number',
+          description: 'Fantasy tournament ID'
+        },
+        page: {
+          type: 'number',
+          description: 'Page number (default: 1)'
+        }
+      },
+      required: ['tournamentId']
+    }
+  },
+  {
+    name: 'hltv_get_event_by_name',
+    description:
+      'Get event information by name. Useful when you have event name but not the ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Event name (e.g., "IEM Katowice 2025")'
+        }
+      },
+      required: ['name']
+    }
+  },
+  {
+    name: 'hltv_get_player_by_name',
+    description:
+      'Get player information by nickname. Useful when you have player name but not the ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Player nickname (e.g., "s1mple")'
+        }
+      },
+      required: ['name']
+    }
+  },
+  {
+    name: 'hltv_get_team_by_name',
+    description:
+      'Get team information by name. Useful when you have team name but not the ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Team name (e.g., "Vitality")'
+        }
+      },
+      required: ['name']
+    }
+  },
+  {
+    name: 'hltv_get_match_stats',
+    description:
+      'Get detailed statistics for a specific match including player performance, maps, and overview. May be blocked by Cloudflare.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'number',
+          description: 'Match stats ID'
+        }
+      },
+      required: ['id']
+    }
+  },
+  {
+    name: 'hltv_get_match_map_stats',
+    description:
+      'Get detailed statistics for a specific map in a match. Returns player stats, rounds, and performance.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'number',
+          description: 'Map stats ID'
+        }
+      },
+      required: ['id']
+    }
+  },
+  {
+    name: 'hltv_get_matches_stats',
+    description:
+      'Get statistics for multiple matches with filters (date range, team, event, etc). Returns match previews with stats.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        startDate: {
+          type: 'string',
+          description: 'Start date in YYYY-MM-DD format'
+        },
+        endDate: {
+          type: 'string',
+          description: 'End date in YYYY-MM-DD format'
+        },
+        teamIds: {
+          type: 'array',
+          items: { type: 'number' },
+          description: 'Filter by team IDs'
+        },
+        eventIds: {
+          type: 'array',
+          items: { type: 'number' },
+          description: 'Filter by event IDs'
+        }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'hltv_get_player_ranking',
+    description:
+      'Get player rankings with filters (date, map, match type, etc). Returns top players with rating, K/D, maps played. May be blocked by Cloudflare.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        startDate: {
+          type: 'string',
+          description: 'Start date in YYYY-MM-DD format'
+        },
+        endDate: {
+          type: 'string',
+          description: 'End date in YYYY-MM-DD format'
+        },
+        matchType: {
+          type: 'string',
+          description: 'Match type filter'
+        },
+        rankingFilter: {
+          type: 'string',
+          description: 'Ranking filter (e.g., "Top5", "Top10", "Top20", "Top30", "Top50")'
+        }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'hltv_get_player_stats',
+    description:
+      'Get comprehensive statistics for a player including overview, individual stats, and match history. May be blocked by Cloudflare.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'number',
+          description: 'Player ID from HLTV'
+        },
+        startDate: {
+          type: 'string',
+          description: 'Start date in YYYY-MM-DD format'
+        },
+        endDate: {
+          type: 'string',
+          description: 'End date in YYYY-MM-DD format'
+        },
+        matchType: {
+          type: 'string',
+          description: 'Match type filter'
+        },
+        rankingFilter: {
+          type: 'string',
+          description: 'Ranking filter'
+        }
+      },
+      required: ['id']
+    }
+  },
+  {
+    name: 'hltv_get_team_stats',
+    description:
+      'Get comprehensive statistics for a team including overview, lineup, match history, map stats, and events. May be blocked by Cloudflare.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'number',
+          description: 'Team ID from HLTV'
+        },
+        currentRosterOnly: {
+          type: 'boolean',
+          description: 'Show stats only for current roster (default: false)'
+        },
+        startDate: {
+          type: 'string',
+          description: 'Start date in YYYY-MM-DD format'
+        },
+        endDate: {
+          type: 'string',
+          description: 'End date in YYYY-MM-DD format'
+        },
+        matchType: {
+          type: 'string',
+          description: 'Match type filter'
+        }
+      },
+      required: ['id']
+    }
+  },
+  {
+    name: 'hltv_connect_to_scorebot',
+    description:
+      'Connect to live match scorebot for real-time updates. Returns a connection that streams match events. Use for live match tracking.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'number',
+          description: 'Match ID to connect to'
+        }
+      },
+      required: ['id']
     }
   }
 ]
@@ -387,6 +677,262 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(streams, null, 2)
             }
           ]
+        }
+      }
+
+      case 'hltv_fantasy_get_tournaments': {
+        const tournaments = await hltv.getFantasyTournaments()
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(tournaments, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_fantasy_get_players': {
+        const schema = z.object({ tournamentId: z.number() })
+        const { tournamentId } = schema.parse(args)
+        const players = await hltv.getFantasyPlayers({ tournamentId })
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(players, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_fantasy_get_team': {
+        const schema = z.object({ tournamentId: z.number() })
+        const { tournamentId } = schema.parse(args)
+        const team = await hltv.getFantasyTeam(tournamentId)
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(team, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_fantasy_create_team': {
+        const schema = z.object({
+          tournamentId: z.number(),
+          playerIds: z.array(z.number())
+        })
+        const { tournamentId, playerIds } = schema.parse(args)
+        const team = await hltv.createFantasyTeam({ tournamentId, playerIds })
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(team, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_fantasy_get_leaderboard': {
+        const schema = z.object({
+          tournamentId: z.number(),
+          page: z.number().optional()
+        })
+        const { tournamentId, page } = schema.parse(args)
+        const leaderboard = await hltv.getFantasyLeaderboard({ tournamentId, page })
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(leaderboard, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_get_event_by_name': {
+        const schema = z.object({ name: z.string() })
+        const { name } = schema.parse(args)
+        const event = await hltv.getEventByName({ name })
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(event, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_get_player_by_name': {
+        const schema = z.object({ name: z.string() })
+        const { name } = schema.parse(args)
+        const player = await hltv.getPlayerByName({ name })
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(player, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_get_team_by_name': {
+        const schema = z.object({ name: z.string() })
+        const { name } = schema.parse(args)
+        const team = await hltv.getTeamByName({ name })
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(team, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_get_match_stats': {
+        const schema = z.object({ id: z.number() })
+        const { id } = schema.parse(args)
+        const stats = await hltv.getMatchStats({ id })
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(stats, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_get_match_map_stats': {
+        const schema = z.object({ id: z.number() })
+        const { id } = schema.parse(args)
+        const stats = await hltv.getMatchMapStats({ id })
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(stats, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_get_matches_stats': {
+        const schema = z.object({
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          teamIds: z.array(z.number()).optional(),
+          eventIds: z.array(z.number()).optional()
+        })
+        const params = schema.parse(args || {})
+        const stats = await hltv.getMatchesStats(params)
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(stats, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_get_player_ranking': {
+        const schema = z.object({
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          matchType: z.any().optional(),
+          rankingFilter: z.any().optional()
+        })
+        const params = schema.parse(args || {})
+        const ranking = await hltv.getPlayerRanking(params)
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(ranking, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_get_player_stats': {
+        const schema = z.object({
+          id: z.number(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          matchType: z.any().optional(),
+          rankingFilter: z.any().optional()
+        })
+        const params = schema.parse(args)
+        const stats = await hltv.getPlayerStats(params)
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(stats, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_get_team_stats': {
+        const schema = z.object({
+          id: z.number(),
+          currentRosterOnly: z.boolean().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          matchType: z.any().optional()
+        })
+        const params = schema.parse(args)
+        const stats = await hltv.getTeamStats(params)
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(stats, null, 2)
+            }
+          ]
+        }
+      }
+
+      case 'hltv_connect_to_scorebot': {
+        const schema = z.object({ id: z.number() })
+        const { id } = schema.parse(args)
+        // Note: connectToScorebot returns a connection/emitter, not data directly
+        // For MCP we'll return info about starting the connection
+        try {
+          await hltv.connectToScorebot({ id })
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  message: 'Scorebot connection initiated for match ' + id,
+                  note: 'This is a real-time event emitter connection. In MCP context, this returns immediately but the connection streams events in the background.',
+                  status: 'Connected'
+                }, null, 2)
+              }
+            ]
+          }
+        } catch (error: any) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  message: 'Failed to connect to scorebot',
+                  error: error.message
+                }, null, 2)
+              }
+            ]
+          }
         }
       }
 

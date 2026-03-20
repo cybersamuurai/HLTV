@@ -21,6 +21,10 @@ import { getTeamStats } from './endpoints/getTeamStats'
 import { getPastEvents } from './endpoints/getPastEvents'
 import { getResults } from './endpoints/getResults'
 import { getNews } from './endpoints/getNews'
+import { getFantasyTournaments } from './endpoints/getFantasyTournaments'
+import { getFantasyPlayers } from './endpoints/getFantasyPlayers'
+import { getFantasyTeam, createFantasyTeam } from './endpoints/getFantasyTeam'
+import { getFantasyLeaderboard } from './endpoints/getFantasyLeaderboard'
 
 export class Hltv {
   constructor(private config: Partial<HLTVConfig> = {}) {
@@ -59,6 +63,13 @@ export class Hltv {
   getResults = getResults(this.config as HLTVConfig)
   getNews = getNews(this.config as HLTVConfig)
   connectToScorebot = connectToScorebot(this.config as HLTVConfig)
+
+  // Fantasy endpoints (require authentication)
+  getFantasyTournaments = getFantasyTournaments(this.config as HLTVConfig)
+  getFantasyPlayers = getFantasyPlayers(this.config as HLTVConfig)
+  getFantasyTeam = getFantasyTeam(this.config as HLTVConfig)
+  createFantasyTeam = createFantasyTeam(this.config as HLTVConfig)
+  getFantasyLeaderboard = getFantasyLeaderboard(this.config as HLTVConfig)
 
   public createInstance(config: Partial<HLTVConfig>) {
     return new Hltv(config)
@@ -153,6 +164,21 @@ export type {
 } from './endpoints/getResults'
 
 export type { NewsPreview, GetNewsArguments } from './endpoints/getNews'
+
+export type { FantasyTournament } from './endpoints/getFantasyTournaments'
+export type {
+  FantasyPlayer,
+  GetFantasyPlayersOptions
+} from './endpoints/getFantasyPlayers'
+export type {
+  FantasyTeam,
+  FantasyTeamPlayer,
+  CreateFantasyTeamOptions
+} from './endpoints/getFantasyTeam'
+export type {
+  FantasyLeaderboardEntry,
+  GetFantasyLeaderboardOptions
+} from './endpoints/getFantasyLeaderboard'
 
 export { GameMap } from './shared/GameMap'
 export { MatchFormat } from './shared/MatchFormat'
